@@ -5,10 +5,6 @@
 /****************************************************************************/
 
 #ifndef __ENABLE_LOGIN__
-#define __ENABLE_LOGIN__                (0)
-#endif
-
-#ifndef __ENABLE_LOGIN__
 /* allows external overwrite */
 #define __ENABLE_LOGIN__                (1)
 #endif
