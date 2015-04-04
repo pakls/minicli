@@ -141,7 +141,11 @@ static void _cli_do_show_help(cmd_t *cmd_p)
 }
 
 
-/* parse tokens */
+/*
+ * Parse tokens
+ *
+ * Note: the spaces in the line are modified to '\0'.
+ */
 static int _cli_line_to_tokens(char *line)
 {
     char    *ptr; // current pointer to the line
@@ -163,7 +167,13 @@ static int _cli_line_to_tokens(char *line)
 }
 
 
-/* find match command */
+/*
+ * Find the fully matched command.
+ *
+ * @note    Duplicated commands were not considered because of space and CPU
+ *          resource limit. Programmers MUST be careful when writing command
+ *          table.
+ */
 static cmd_t *_cli_find_one_match(cmd_t *cmd_p, char *str)
 {
     cmd_t *match = NULL;
@@ -179,8 +189,9 @@ static cmd_t *_cli_find_one_match(cmd_t *cmd_p, char *str)
 
 
 /*
- * Note: the spaces in the line are modified to '\0'.
- * Not use recursive to avoid stack overflow.
+ * Process the input 'line' and return when ended.
+ *
+ * Note: Use interative instead of recursive to avoid stack overflow.
  */
 static void _cli_do_cmd(char *line)
 {
@@ -206,8 +217,10 @@ static void _cli_do_cmd(char *line)
         }
 
         if (i == toks - 1) {
+            /* out of tokens */
             cmd_p->fptr(cb->tok[i + 1]);
         } else {
+            
         }
     }
 }
