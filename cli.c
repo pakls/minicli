@@ -97,8 +97,12 @@ static void cli_puts(char *s)
 }
 
 /*
- * if the first character of the help message is 0xFF, this command is hidden
- * one and will not be shown in help.
+ * Show the help messages of every command at this level.
+ * 
+ * If the first character of the help message is 0x01, this command is hidden
+ * and will not be shown in help output. Otherwise, the help messages were
+ * displayed and if the command length gets longer, the output will be shifted
+ * too.
  */
 static void _cli_do_show_help(cmd_t *cmd_p)
 {
@@ -106,8 +110,9 @@ static void _cli_do_show_help(cmd_t *cmd_p)
     int     min = 6;
     int     len;
 
-    do {
-        if (p->help && p->help[0] == 0xFF) {
+    while (p->cmd != NULL) {
+        /* hidden command */
+        if (p->help && p->help[0] == 0x01) {
             p++;
             continue;
         }
@@ -127,7 +132,7 @@ static void _cli_do_show_help(cmd_t *cmd_p)
         cli_puts(p->help);
         cb->put('\n');
         p++;
-    } while (p->cmd != NULL);
+    }
 }
 
 
