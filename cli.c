@@ -200,7 +200,7 @@ static void _cli_do_cmd(char *line)
 
         /* find match command */
         cmd_p = _cli_find_one_match(cmd_p, cb->tok[i]);
-        if (cmd_p) {
+        if (!cmd_p) {
             cli_puts("unknown command\n");
             break;
         }
