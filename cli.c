@@ -122,14 +122,19 @@ static void _cli_do_show_help(cmd_t *cmd_p)
             min = len;
 
         cli_puts(p->cmd);
-        len = min - len;
-        do {
-            cb->put(' ');
-        } while (len-- > 0);
 
-        cb->put('-');
-        cb->put(' ');
-        cli_puts(p->help);
+        /* if there is no help message, skip display */
+        if (p->help) {
+            len = min - len;
+            do {
+                cb->put(' ');
+            } while (len-- > 0);
+
+            cb->put('-');
+            cb->put(' ');
+            cli_puts(p->help);
+        }
+
         cb->put('\n');
         p++;
     }
