@@ -96,7 +96,10 @@ static void cli_puts(char *s)
     } while (*s++);
 }
 
-
+/*
+ * if the first character of the help message is 0xFF, this command is hidden
+ * one and will not be shown in help.
+ */
 static void _cli_do_show_help(cmd_t *cmd_p)
 {
     cmd_t   *p  = cmd_p;
@@ -104,6 +107,11 @@ static void _cli_do_show_help(cmd_t *cmd_p)
     int     len;
 
     do {
+        if (p->help && p->help[0] == 0xFF) {
+            p++;
+            continue;
+        }
+
         len = strlen(p->cmd);
         if (len > min)
             min = len;
