@@ -380,7 +380,7 @@ struct case_t {
     char        *desc;
     test_fptr   fptr;
 } all[] = {
-    { "name_len", &cnf_1, "description length indentation", test_1 },
+    { "name_len", &cnf_1, "description indentation test", test_1 },
     { "run",      &cnf_2, "logout command test", test_2 },
 };
 
