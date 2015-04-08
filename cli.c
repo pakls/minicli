@@ -45,7 +45,10 @@
 
 /****************************************************************************/
 
-typedef uint8_t (*fp_t)(void *param);
+/**
+ * Function pointer type of CLI command handlers.
+ */
+typedef uint8_t (*fp_t)(uint8_t len, char *param);
 
 typedef struct cmd_s cmd_t;
 
@@ -188,6 +191,32 @@ static cmd_t *_cli_find_one_match(cmd_t *cmd_p, char *str)
 }
 
 
+
+static void _cli_do_cmd_no_sub(uint8_t len, uint8_t i, cmd_t *cmd_p)
+{
+    if (cmd_p->fptr) {
+        cmd_p->fptr(len - i, cb->tok[i + 1]);
+    } else {
+        cli_puts(cb->tok[i]);
+        cli_puts(" not handled\n");
+    }
+}
+
+
+static void _cli_do_cmd_no_token(uint8_t len, uint8_t i, cmd_t *cmd_p)
+{
+    if (cmd_p->fptr) {
+        cmd_p->fptr(len - i, cb->tok[i + 1]);
+    } else if (cmd_p->sub) {
+        cli_puts("incomplete command, more options:\n");
+        _cli_do_show_help(cmd_p->sub);
+    } else {
+        cli_puts(cb->tok[i]);
+        cli_puts(" not handled\n");
+    }
+}
+
+
 /*
  * Process the input 'line' and return when ended.
  *
@@ -212,16 +241,25 @@ static void _cli_do_cmd(char *line)
         /* find match command */
         cmd_p = _cli_find_one_match(cmd_p, cb->tok[i]);
         if (!cmd_p) {
-            cli_puts("unknown command\n");
+            cli_puts(cb->tok[i]);
+            cli_puts(" unknown command\n");
             break;
         }
 
+        /* out of tokens */
         if (i == toks - 1) {
-            /* out of tokens */
-            cmd_p->fptr(cb->tok[i + 1]);
-        } else {
-            
+            _cli_do_cmd_no_token(toks, i, cmd_p);
+            break;
         }
+
+        /* there are remaining tokens but no sub commands */
+        if (!cmd_p->sub) {
+             _cli_do_cmd_no_sub(toks, i, cmd_p);
+             break;
+        }
+
+        /* descend to next level */
+        cmd_p = cmd_p->sub;
     }
 }
 
@@ -302,7 +340,7 @@ void cli_task(void)
 
 /****************************************************************************/
 
-uint8_t cli_lo(void *param)
+uint8_t cli_lo(uint8_t len, char *param)
 {
     cb->state = 0;
     cli_puts("logout\n");
@@ -330,7 +368,13 @@ uint8_t cli_lo(void *param)
 
 typedef uint8_t (*test_fptr)(cli_t *);
 
-uint8_t ls_example(void *param)
+uint8_t ls_example_a(uint8_t len, char *param)
+{
+    printf("ls -a called\n");
+    return 0;
+}
+
+uint8_t ls_example(uint8_t len, char *param)
 {
     printf("ls called\n");
     return 0;
@@ -405,6 +449,51 @@ static uint8_t test_2(cli_t *cb)
 
 /****************************************************************************/
 
+/* case 3 */
+
+static cmd_t   set_3_1_1[] =
+{
+    { "-a",           NO_PARAM, "all",       ls_example_a },
+    { NULL }
+};
+
+static cmd_t   set_3_1[] =
+{
+    { "-a",           NO_PARAM, "all",       ls_example_a },
+    { "-l",           NO_PARAM, "long",      NULL },         // not handled
+    { "-r",           NO_PARAM, "recursive", NULL,  set_3_1_1 },
+    { NULL }
+};
+
+static cmd_t   set_3[] =
+{
+    { "ls",           NO_PARAM, "list",     ls_example, set_3_1 },
+    { "lo",           NO_PARAM, "logout",   cli_lo },
+    { NULL }
+};
+
+static cli_t   cnf_3 =
+{
+    .state = 1, // set to 1 to skip login
+#if __ENABLE_LOGIN__
+    .knock = knock,
+#endif
+    .get   = getch,
+    .put   = putch,
+    .cmd   = &set_3[0]
+};
+
+
+static uint8_t test_3(cli_t *cb)
+{
+    cli_init(cb);
+    cli_task();
+    return 0;
+}
+
+
+/****************************************************************************/
+
 struct case_t {
     char        *name;
     cli_t       *conf;
@@ -413,6 +502,7 @@ struct case_t {
 } all[] = {
     { "name_len", &cnf_1, "description indentation test", test_1 },
     { "run",      &cnf_2, "logout command test", test_2 },
+    { "tokens",   &cnf_3, "token handling", test_3 },
 };
 
 /****************************************************************************/
