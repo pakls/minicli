@@ -386,14 +386,14 @@ uint8_t ls_example(uint8_t len, char *param)
 
 static cmd_t   set_1[] =
 {
-    { "ls",           NO_PARAM, "list",     ls_example },
-    { "lo",           NO_PARAM, "logout",   cli_logout },
-    { "lon",          NO_PARAM, "longer",   cli_logout },
-    { "ok",           NO_PARAM, "shorter",  cli_logout },
-    { "long",         NO_PARAM, "longer",   cli_logout },
-    { "ok",           NO_PARAM, "shorter",  cli_logout },
-    { "longlongtime", NO_PARAM, "longer",   cli_logout },
-    { "ok",           NO_PARAM, "shorter",  cli_logout },
+    { "ls",           "list",     ls_example },
+    { "lo",           "logout",   cli_logout },
+    { "lon",          "longer",   cli_logout },
+    { "ok",           "shorter",  cli_logout },
+    { "long",         "longer",   cli_logout },
+    { "ok",           "shorter",  cli_logout },
+    { "longlongtime", "longer",   cli_logout },
+    { "ok",           "shorter",  cli_logout },
     { NULL }
 };
 
@@ -421,8 +421,8 @@ static uint8_t test_1(cli_t *cb)
 
 static cmd_t   set_2[] =
 {
-    { "ls",           NO_PARAM, "list",     ls_example },
-    { "lo",           NO_PARAM, "logout",   cli_logout },
+    { "ls",           "list",     ls_example },
+    { "lo",           "logout",   cli_logout },
     { NULL }
 };
 
@@ -453,22 +453,22 @@ static uint8_t test_2(cli_t *cb)
 
 static cmd_t   set_3_1_1[] =
 {
-    { "-a",           NO_PARAM, "all",       ls_example_a },
+    { "-a",           "all",       ls_example_a },
     { NULL }
 };
 
 static cmd_t   set_3_1[] =
 {
-    { "-a",           NO_PARAM, "all",       ls_example_a },
-    { "-l",           NO_PARAM, "long",      NULL },         // not handled
-    { "-r",           NO_PARAM, "recursive", NULL,  set_3_1_1 },
+    { "-a",           "all",       ls_example_a },
+    { "-l",           "long",      NULL },         // not handled
+    { "-r",           "recursive", NULL,  set_3_1_1 },
     { NULL }
 };
 
 static cmd_t   set_3[] =
 {
-    { "ls",           NO_PARAM, "list",     ls_example, set_3_1 },
-    { "lo",           NO_PARAM, "logout",   cli_logout },
+    { "ls",           "list",     ls_example, set_3_1 },
+    { "lo",           "logout",   cli_logout },
     { NULL }
 };
 

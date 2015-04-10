@@ -24,9 +24,6 @@ extern "C" {
 #define MAX_TOKENS              (20)
 
 
-#define NO_PARAM                (0)
-
-
 /****************************************************************************
  *
  * Types.
@@ -69,6 +66,9 @@ typedef void    (*putch_fptr)(char);
 /**
  * If login is enabled and hardcode is not used. This is the callback function
  * that mini-CLI will call to authenicate the user.
+ *
+ * @retval  0   if validation of the combination of 'id' and 'pass' failed.
+ *              other values if succeeded.
  */
 typedef uint8_t (*knock_fptr)(char *id, char *pass);
 #endif
@@ -76,6 +76,12 @@ typedef uint8_t (*knock_fptr)(char *id, char *pass);
 
 /**
  * Function pointer type of CLI command handlers.
+ *
+ * All CLI handlers must follow this prototype. An example is cli_logout().
+ *
+ * @note    Currently, the return value of CLI handlers are ignore. However,
+ *          to keep backward compatiblity, CLI handlers must return 0.
+ *
  */
 typedef uint8_t (*fp_t)(uint8_t len, char *param);
 
@@ -89,7 +95,6 @@ typedef struct cmd_s cmd_t;
 
 struct cmd_s {
     char    *cmd;
-    char    *param;
     char    *help;
     fp_t    fptr;
     cmd_t   *sub;   ///< sub commands
