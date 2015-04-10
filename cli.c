@@ -1,18 +1,22 @@
 
-#include <stdint.h>
+
 #include <string.h>
 
-/****************************************************************************/
+#include "cli.h"
 
-#ifndef __ENABLE_LOGIN__
-/* allows external overwrite */
-#define __ENABLE_LOGIN__                (1)
-#endif
+
+/****************************************************************************
+ *
+ * Configurations.
+ *
+ ****************************************************************************/
+
 
 #if __ENABLE_LOGIN__
 /* enable hardcode login credentials by default */
 #define __ENABLE_HARDCODE_LOGIN__
 #endif
+
 
 #ifdef __ENABLE_REAL_KNOCK__
 #ifdef __ENABLE_HARDCODE_LOGIN__
@@ -21,19 +25,6 @@
 #endif
 #endif
 
-/****************************************************************************
- *
- * Tunable constants.
- *
- ****************************************************************************/
-
-#define MAX_ID          (16)
-#define MAX_TOKENS      (20)
-
-#ifdef __ENABLE_HARDCODE_LOGIN__
-#define LOGIN_ID        "a"
-#define LOGIN_PASSWD    "a"
-#endif
 
 /****************************************************************************
  *
@@ -41,63 +32,52 @@
  *
  ****************************************************************************/
 
-#define NO_PARAM        (0)
-
-/****************************************************************************/
-
-/**
- * Function pointer type of CLI command handlers.
- */
-typedef uint8_t (*fp_t)(uint8_t len, char *param);
-
-typedef struct cmd_s cmd_t;
-
-struct cmd_s {
-    char    *cmd;
-    char    *param;
-    char    *help;
-    fp_t    fptr;
-    cmd_t   *sub;   ///< sub commands
-};
 
 #if __ENABLE_LOGIN__
-typedef uint8_t (*knock_fptr)(char *id, char *pass);
+#define MAX_ID          (16)
 #endif
-typedef char    (*getch_fptr)(void);
-typedef void    (*putch_fptr)(char);
-
-typedef struct cli_s {
-    uint8_t         state; ///< 0 if not logged in
-    cmd_t           *cmd;
-    getch_fptr      get;
-    putch_fptr      put;
-#if __ENABLE_LOGIN__
-    knock_fptr      knock;
-#endif
-    char            *tok[MAX_TOKENS];
-} cli_t;
-
-/****************************************************************************/
-
-static cli_t        *cb;
-
-/****************************************************************************/
 
 
 #ifdef __ENABLE_HARDCODE_LOGIN__
-uint8_t _cli_hardcode_login(char *id, char *pass)
+#define LOGIN_ID        "a"
+#define LOGIN_PASSWD    "a"
+#endif
+
+
+/****************************************************************************
+ *
+ * Types.
+ *
+ ****************************************************************************/
+
+
+/****************************************************************************
+ *
+ * Static variables.
+ *
+ ****************************************************************************/
+
+
+/**
+ * The only static variable in the mini-CLI.
+ */
+static cli_t        *cb;
+
+
+/****************************************************************************
+ *
+ * Local functions.
+ *
+ ****************************************************************************/
+
+
+#ifdef __ENABLE_HARDCODE_LOGIN__
+static uint8_t _cli_hardcode_login(char *id, char *pass)
 {
     return (!strcmp(id, LOGIN_ID) && !strcmp(pass, LOGIN_PASSWD));
 }
 #endif
 
-
-static void cli_puts(char *s)
-{
-    do {
-        cb->put(*s);
-    } while (*s++);
-}
 
 /*
  * Show the help messages of every command at this level.
@@ -264,18 +244,7 @@ static void _cli_do_cmd(char *line)
 }
 
 
-/****************************************************************************/
-
-void cli_init(cli_t *cli)
-{
-    cb          = cli;
-#ifdef __ENABLE_HARDCODE_LOGIN__
-    cb->knock   = _cli_hardcode_login;
-#endif
-}
-
-
-uint8_t cli_getline(char *prompt, char echo, char *buf, uint8_t max)
+static uint8_t _cli_getline(char *prompt, char echo, char *buf, uint8_t max)
 {
     int  i = 0;
     char c;
@@ -300,26 +269,30 @@ uint8_t cli_getline(char *prompt, char echo, char *buf, uint8_t max)
 
 
 #if  __ENABLE_LOGIN__
-/* Return 1 if succeed. */
-uint8_t cli_login(void)
+/**
+ * The login function.
+ *
+ * The login function returns only if the login has succeed. Otherwise, the
+ * user is stucked in login loop.
+ */
+static void _cli_login(void)
 {
     char    id   [MAX_ID + 1];
     char    pass [MAX_ID + 1];
 
     /* already logged in */
-    if (cb->state) return 1;
+    if (cb->state) return;
 
     while (1) {
-        if (!cli_getline("login: ", 0, id, MAX_ID))
+        if (!_cli_getline("login: ", 0, id, MAX_ID))
             continue;
 
-        if (!cli_getline("password: ", '*', pass, MAX_ID))
+        if (!_cli_getline("password: ", '*', pass, MAX_ID))
             continue;
 
         /* validate */
         if (cb->knock(id, pass)) {
             cb->state = 1;
-            return 1;
         }
 
         cli_puts("login failed\n");
@@ -328,19 +301,46 @@ uint8_t cli_login(void)
 #endif
 
 
+/****************************************************************************
+ *
+ * API functions.
+ *
+ ****************************************************************************/
+
+
+void cli_init(cli_t *cli)
+{
+    cb          = cli;
+#ifdef __ENABLE_HARDCODE_LOGIN__
+    cb->knock   = _cli_hardcode_login;
+#endif
+}
+
+
 void cli_task(void)
 {
     char line[65];
 
+#if  __ENABLE_LOGIN__
+    _cli_login();
+#endif
+
     do {
-        if (cli_getline("$ ", 0, line, 64))
+        if (_cli_getline("$ ", 0, line, 64))
             _cli_do_cmd(line);
     } while (cb->state);
 }
 
-/****************************************************************************/
 
-uint8_t cli_lo(uint8_t len, char *param)
+void cli_puts(char *s)
+{
+    do {
+        cb->put(*s);
+    } while (*s++);
+}
+
+
+uint8_t cli_logout(uint8_t len, char *param)
 {
     cb->state = 0;
     cli_puts("logout\n");
@@ -387,13 +387,13 @@ uint8_t ls_example(uint8_t len, char *param)
 static cmd_t   set_1[] =
 {
     { "ls",           NO_PARAM, "list",     ls_example },
-    { "lo",           NO_PARAM, "logout",   cli_lo },
-    { "lon",          NO_PARAM, "longer",   cli_lo },
-    { "ok",           NO_PARAM, "shorter",  cli_lo },
-    { "long",         NO_PARAM, "longer",   cli_lo },
-    { "ok",           NO_PARAM, "shorter",  cli_lo },
-    { "longlongtime", NO_PARAM, "longer",   cli_lo },
-    { "ok",           NO_PARAM, "shorter",  cli_lo },
+    { "lo",           NO_PARAM, "logout",   cli_logout },
+    { "lon",          NO_PARAM, "longer",   cli_logout },
+    { "ok",           NO_PARAM, "shorter",  cli_logout },
+    { "long",         NO_PARAM, "longer",   cli_logout },
+    { "ok",           NO_PARAM, "shorter",  cli_logout },
+    { "longlongtime", NO_PARAM, "longer",   cli_logout },
+    { "ok",           NO_PARAM, "shorter",  cli_logout },
     { NULL }
 };
 
@@ -421,8 +421,8 @@ static uint8_t test_1(cli_t *cb)
 
 static cmd_t   set_2[] =
 {
-    { "ls",           NO_PARAM, "list", ls_example },
-    { "lo",           NO_PARAM, "logout",   cli_lo },
+    { "ls",           NO_PARAM, "list",     ls_example },
+    { "lo",           NO_PARAM, "logout",   cli_logout },
     { NULL }
 };
 
@@ -468,7 +468,7 @@ static cmd_t   set_3_1[] =
 static cmd_t   set_3[] =
 {
     { "ls",           NO_PARAM, "list",     ls_example, set_3_1 },
-    { "lo",           NO_PARAM, "logout",   cli_lo },
+    { "lo",           NO_PARAM, "logout",   cli_logout },
     { NULL }
 };
 
@@ -494,6 +494,10 @@ static uint8_t test_3(cli_t *cb)
 
 /****************************************************************************/
 
+
+
+/****************************************************************************/
+
 struct case_t {
     char        *name;
     cli_t       *conf;
@@ -501,8 +505,8 @@ struct case_t {
     test_fptr   fptr;
 } all[] = {
     { "name_len", &cnf_1, "description indentation test", test_1 },
-    { "run",      &cnf_2, "logout command test", test_2 },
-    { "tokens",   &cnf_3, "token handling", test_3 },
+    { "run",      &cnf_2, "logout command test",          test_2 },
+    { "tokens",   &cnf_3, "token handling",               test_3 },
 };
 
 /****************************************************************************/
