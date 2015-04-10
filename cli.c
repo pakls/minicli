@@ -174,7 +174,7 @@ static int _cli_line_to_tokens(char *line)
  * Find the fully matched command.
  *
  * @note    Duplicated commands were not considered because of space and CPU
- *          resource limit. Programmers MUST be careful when writing command
+ *          resource limit. Programmers MUST be careful when design command
  *          table.
  */
 static cmd_t *_cli_find_one_match(cmd_t *cmd_p, char *str)
