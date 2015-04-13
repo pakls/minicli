@@ -244,6 +244,33 @@ static void _cli_do_cmd(char *line)
 }
 
 
+static void _cli_putx(uint32_t hex, uint8_t shift)
+{
+#define HEX_MAX         "FFFFFFFF" /* longest hex */
+#define HEX_BUF_MAX     sizeof(HEX_MAX)
+
+    char        buf[HEX_BUF_MAX + 1];
+    uint8_t     i;
+    uint8_t     h;
+
+    buf[HEX_BUF_MAX] = '\0';
+
+    for (i = HEX_BUF_MAX - 1; i > 0; i--) {
+        h = hex & 0xF;
+        if (h > 9)
+            h += shift - 48 - 10;
+
+        buf[i] = h + 48;
+        hex    = hex >> 4;
+
+        if (!hex)
+            break;
+    }
+
+    cli_puts(&buf[i]);
+}
+
+
 static uint8_t _cli_getline(char *prompt, char echo, char *buf, uint8_t max)
 {
     int  i = 0;
@@ -345,6 +372,71 @@ uint8_t cli_logout(uint8_t len, char *param)
     cb->state = 0;
     cli_puts("logout\n");
     return 0;
+}
+
+
+void cli_putd(int dec)
+{
+#define DEC_MAX         "-2147483648" /* longest integer */
+#define DEC_BUF_MAX     sizeof(DEC_MAX)
+
+    char        buf[DEC_BUF_MAX + 1];
+    uint8_t     negative;
+    uint8_t     i;
+
+    buf[DEC_BUF_MAX] = '\0';
+    negative         = (dec < 0);
+
+    for (i = DEC_BUF_MAX - 1; i >= 0; i--) {
+        buf[i] = (dec % 10) + 0x30;
+        dec    = dec / 10;
+
+        if (!dec) break;
+    }
+
+    if (negative) {
+        i--;
+        buf[i] = '-';
+    }
+
+    cli_puts(&buf[i]);
+}
+
+
+void cli_putln(void)
+{
+    cli_puts("\n");
+}
+
+
+void cli_putsp(void)
+{
+    cli_puts(" ");
+}
+
+void cli_putX(uint32_t hex)
+{
+    _cli_putx(hex, 65);
+}
+
+
+void cli_putx(uint32_t hex)
+{
+    _cli_putx(hex, 97);
+}
+
+
+void cli_put0x(uint32_t hex)
+{
+    cli_puts("0x");
+    _cli_putx(hex, 97);
+}
+
+
+void cli_put0X(uint32_t hex)
+{
+    cli_puts("0x");
+    _cli_putx(hex, 65);
 }
 
 

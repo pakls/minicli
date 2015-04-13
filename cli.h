@@ -149,6 +149,15 @@ void cli_puts(char *s);
 uint8_t cli_logout(uint8_t len, char *param);
 
 
+void cli_putd(int dec);
+void cli_putln(void);
+void cli_putsp(void);
+void cli_putX(uint32_t hex);
+void cli_putx(uint32_t hex);
+void cli_put0x(uint32_t hex);
+void cli_put0X(uint32_t hex);
+
+
 #ifdef __cplusplus
 }
 #endif
