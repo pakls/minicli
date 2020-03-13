@@ -5,8 +5,6 @@ else
 Q=
 endif
 
-
-#CFLAGS  += -D__DISABLE_UT__
 CFLAGS += -D__ENABLE_HARDCODE_LOGIN___ -D__ENABLE_LOGIN__
 
 ifeq ($(shell uname),Darwin)
@@ -26,7 +24,7 @@ endif
 
 .PHONY: sizing
 
-all: cli sizing
+all: ut_cli sizing
 
 clean:
 	$(Q)rm -f *.o cli
@@ -36,7 +34,7 @@ CFLAGS += -g -Os -Wall
 %.o: %.c io.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-cli: io.o cli.o knock.o
+ut_cli: io.o knock.o ut_cli.o
 	$(CC) -o $@ $^ $(CFLAGS)
 
 sizing:
