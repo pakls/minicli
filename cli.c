@@ -1,8 +1,10 @@
 
 
+#include <stdbool.h>
 #include <string.h>
 
 #include "cli.h"
+#include "term.h"
 
 
 /****************************************************************************
@@ -171,7 +173,6 @@ static cmd_t *_cli_find_one_match(cmd_t *cmd_p, char *str)
 }
 
 
-
 static void _cli_do_cmd_no_sub(uint8_t len, uint8_t i, cmd_t *cmd_p)
 {
     if (cmd_p->fptr) {
@@ -271,27 +272,116 @@ static void _cli_putx(uint32_t hex, uint8_t shift)
 }
 
 
-static uint8_t _cli_getline(char *prompt, char echo, char *buf, uint8_t max)
+static uint8_t _cli_getline(cli_t *cb, char *prompt, char echo, char *buf, int16_t pos, uint16_t max)
 {
     int  i = 0;
+    bool esc = false;
+    uint8_t result = 0;
+    uint32_t key_seq;
     char c;
 
     cli_puts(prompt);
 
     while (1) {
-        buf[i] = 0;
         c = cb->get();
+
+        if (c == KEY_ESC) {
+            key_seq = 0;
+            esc = true;
+            continue;
+        }
+
+        if (esc) {
+            key_seq = (key_seq << 8) | c;
+            if (c == '~' || (c >= 'A' && c <= 'D') ||
+                (c >= 'F' && c <= 'H') || (c >= 'P' && c <= 'S')) {
+                esc = false;
+#ifdef DEBUG_KEY_SEQ
+                cli_puts("key: ");
+                for (int i = 0; i < 32; i += 8) {
+                    cli_putx(key_seq >> i);
+                    cb->put(' ');
+                }
+                cb->put('\n');
+#endif
+                // process key seq
+                switch (key_seq) {
+                case KEY_LEFT:
+                    if (i > 0) {
+                        cursor_move_left();
+                        i--;
+                    }
+                    break;
+                case KEY_RIGHT:
+                    if (buf[i] != 0) {
+                        cursor_move_right();
+                        i++;
+                    }
+                    break;
+                case KEY_HOME:
+                    while (i > 0) {
+                        cursor_move_left();
+                        i--;
+                    }
+                    break;
+                case KEY_END:
+                    while (buf[i] != 0) {
+                        cursor_move_right();
+                        i++;
+                    }
+                    break;
+                case KEY_DEL:
+                    break;
+                default:
+#ifdef DEBUG_KEY_SEQ
+                    cli_puts("unknown key code: ");
+                    for (int i = 24; i >= 0; i -= 8) {
+                        cli_putd((key_seq >> i) & 0xFF);
+                        cb->put(' ');
+                    }
+                    cb->put('\n');
+#endif
+                    break;
+                }
+            }
+            continue;
+        }
+
         if (c == 3)
-            return 0;
+            break;
+
+        if (c == KEY_DEL) {
+            if (i > 0) {
+                int j = i - 1;
+                cursor_move_left();
+                while (buf[j]) {
+                    buf[j] = buf[j + 1];
+                    cb->put(buf[j] ? buf[j] : ' ');
+                    j++;
+                }
+                i--;
+
+                while ((j--) > i)
+                    cursor_move_left();
+            }
+            continue;
+        }
+
         if (c == '\n') {
             cb->put('\n');
-            return 1;
+            result = 1;
+            break;
         }
+
         if (i < max) {
+            if (buf[i] == '\0')
+                buf[i + 1] = 0;
             buf[i++] = c;
             cb->put(echo ? echo : c);
         }
     }
+
+    return result;
 }
 
 
@@ -311,10 +401,12 @@ static void _cli_login(void)
     if (cb->state) return;
 
     while (1) {
-        if (!_cli_getline("login: ", 0, id, MAX_ID))
+        id[0] = '\0';
+        if (!_cli_getline(cb, "login: ", 0, id, 0, MAX_ID))
             continue;
 
-        if (!_cli_getline("password: ", '*', pass, MAX_ID))
+        pass[0] = '\0';
+        if (!_cli_getline(cb, "password: ", '*', pass, 0, MAX_ID))
             continue;
 
         /* validate */
@@ -353,7 +445,8 @@ void cli_task(void)
 #endif
 
     do {
-        if (_cli_getline("$ ", 0, line, 64))
+        line[0] = '\0';
+        if (_cli_getline(cb, "$ ", 0, line, 0, 64))
             _cli_do_cmd(line);
     } while (cb->state);
 }

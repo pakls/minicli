@@ -34,7 +34,7 @@ CFLAGS += -g -Os -Wall
 %.o: %.c io.h
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-ut_cli: io.o knock.o ut_cli.o
+ut_cli: io.o knock.o ut_cli.o term.o
 	$(CC) -o $@ $^ $(CFLAGS)
 
 sizing:
