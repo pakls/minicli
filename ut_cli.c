@@ -100,6 +100,12 @@ uint8_t ls_example(uint8_t len, char *param)
     return 0;
 }
 
+uint8_t clear_example(uint8_t len, char *param)
+{
+    term_clear();
+    return 0;
+}
+
 /****************************************************************************/
 
 /* case 1 */
@@ -143,6 +149,7 @@ static cmd_t   set_2[] =
 {
     { "ls",           "list",     ls_example },
     { "lo",           "logout",   cli_logout },
+    { "clear",        "clr scn",  clear_example },
     { NULL }
 };
 

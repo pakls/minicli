@@ -33,9 +33,13 @@ enum key_seq {
 
 #define CURSOR_LEFT     TUPLE(KEY_ESC, '[', '1', 'D')
 #define CURSOR_RIGHT    TUPLE(KEY_ESC, '[', '1', 'C')
+#define SCREEN_CLEAR    TUPLE(KEY_ESC, '[', '2', 'J')
+#define CURSOR_1_1      TUPLE(KEY_ESC, '[', ';', 'H')
 
 #define cursor_move_left() cursor_move(CURSOR_LEFT)
 #define cursor_move_right() cursor_move(CURSOR_RIGHT)
 
 void cursor_move(uint32_t cursor_seq);
+
+void term_clear(void);
 

@@ -10,3 +10,11 @@ void cursor_move(uint32_t cursor_seq)
         cli_putc((cursor_seq >> i) & 0xFF);
 }
 
+void term_clear(void)
+{
+    for (int i = 24; i >= 0; i -= 8)
+        cli_putc((SCREEN_CLEAR >> i) & 0xFF);
+    for (int i = 24; i >= 0; i -= 8)
+        cli_putc((CURSOR_1_1 >> i) & 0xFF);
+}
+
