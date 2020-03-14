@@ -375,6 +375,12 @@ uint8_t cli_logout(uint8_t len, char *param)
 }
 
 
+void cli_putc(char c)
+{
+    cb->put(c);
+}
+
+
 void cli_putd(int dec)
 {
 #define DEC_MAX         "-2147483648" /* longest integer */

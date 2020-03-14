@@ -149,6 +149,7 @@ void cli_puts(char *s);
 uint8_t cli_logout(uint8_t len, char *param);
 
 
+void cli_putc(char c);
 void cli_putd(int dec);
 void cli_putln(void);
 void cli_putsp(void);
